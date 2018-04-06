@@ -1,7 +1,7 @@
 {
-  "name": "davidarmstrong-hue_rapi",
+  "name": "davidarmstrong-hue_rsapi",
   "version": "0.1.0",
-  "author": "\\",
+  "author": "David Armstrong <david.armstrong@puppet.com>",
   "summary": "",
   "license": "Apache-2.0",
   "source": "",
