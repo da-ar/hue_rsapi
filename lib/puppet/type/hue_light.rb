@@ -12,7 +12,7 @@ Puppet::ResourceApi.register_type(
       behaviour: :namevar,
     },
     on:         {
-      type:     'Boolean',
+      type:     'Optional[Boolean]',
       desc:     'The light is on',
     },
     hue:        {

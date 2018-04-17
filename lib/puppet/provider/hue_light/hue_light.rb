@@ -37,7 +37,7 @@ class Puppet::Provider::HueLight::HueLight
 
   def update(context, name, should)
     args = {}.tap do |hash|
-      hash[:on] = should[:on]
+      hash[:on] = should[:on] if should[:on]
       hash[:bri] = should[:bri] if should[:bri]
       hash[:hue] = should[:hue] if should[:hue]
       hash[:sat] = should[:sat] if should[:sat]
