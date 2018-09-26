@@ -10,10 +10,21 @@ RSpec.describe Puppet::Provider::HueLight::HueLight do
 
   let(:context) { instance_double('Puppet::ResourceApi::BaseContext', 'context') }
   let(:hue_device) { instance_double('Puppet::Util::NetworkDevice::Philips_hue::device', 'hue_device') }
-  let(:rest_connection) { class_double('Faraday', 'rest_connection') }
+
+  before(:each) do
+    allow(context).to receive(:device).and_return(hue_device)
+  end
 
   describe '#set' do
-    let(:current) do
+    let(:changes) do
+      {
+        'test' => {
+          is: is_hash,
+          should: should_hash,
+        },
+      }
+    end
+    let(:is_hash) do
       {
         name: 'test',
         on: true,
@@ -26,22 +37,7 @@ RSpec.describe Puppet::Provider::HueLight::HueLight do
     end
 
     context 'when there are no changes to be made' do
-      let(:changes) do
-        {
-          'test' => {
-            is: current,
-            should: {
-              name: 'test',
-              on: true,
-              bri: 254,
-              hue: 1000,
-              sat: 124,
-              effect: 'none',
-              alert: 'none',
-            },
-          },
-        }
-      end
+      let(:should_hash) { is_hash }
 
       it 'does not call update' do
         expect(provider).not_to receive(:update)
@@ -50,46 +46,112 @@ RSpec.describe Puppet::Provider::HueLight::HueLight do
     end
 
     context 'when there are changes to be made' do
-      let(:changes) do
+      let(:should_hash) do
         {
-          'test' => {
-            is: current,
-            should: {
-              name: 'test',
-              on: true,
-              bri: 254,
-              hue: 1001,
-              sat: 124,
-              effect: 'none',
-              alert: 'none',
-            },
-          },
+          name: 'test',
+          on: true,
+          bri: 254,
+          hue: 1001,
+          sat: 124,
+          effect: 'none',
+          alert: 'none',
         }
       end
-      let(:url) { 'lights/test/state' }
 
       it 'calls update with changes' do
-        allow(context).to receive(:device).and_return(hue_device)
-        expect(hue_device).to receive(:connection).and_return(rest_connection)
-
-        output_should = changes['test'][:should].dup
-        output_should.delete(:name)
-
-        expect(rest_connection).to receive(:put).with(url, include_json(output_should)).once
+        expect(provider).to receive(:update).with(context, 'test', should_hash) # rubocop:disable RSpec/SubjectStub
         provider.set(context, changes)
       end
     end
   end
 
   describe '#get' do
+    before(:each) do
+      allow(hue_device).to receive(:connection)
+      allow(hue_device).to receive(:hue_get).and_return(api_data)
+    end
+
+    context 'when no data is returned from HUE API' do
+      let(:api_data) { nil }
+
+      it 'returns no data' do
+        expect(provider.get(context)).to eq([])
+      end
+    end
+
+    context 'when data is returned from HUE API' do
+      let(:api_data) do
+        {
+          '1' =>
+          {
+            'state' =>
+            {
+              'on' => true,
+              'bri' => 254,
+              'hue' => 25_072,
+              'sat' => 254,
+              'effect' => 'colorloop',
+              'alert' => 'select',
+            },
+          },
+          '2' =>
+          {
+            'state' =>
+            {
+              'on' => true,
+              'bri' => 254,
+              'hue' => 19_928,
+              'sat' => 254,
+              'effect' => 'colorloop',
+              'alert' => 'none',
+            },
+          },
+        }
+      end
+      let(:hue_hash) do
+        [{
+          name: '1',
+          on: true,
+          bri: 254,
+          hue: 25_072,
+          sat: 254,
+          effect: 'colorloop',
+          alert: 'select',
+        },
+         {
+           name: '2',
+           on: true,
+           bri: 254,
+           hue: 19_928,
+           sat: 254,
+           effect: 'colorloop',
+           alert: 'none',
+         }]
+      end
+
+      it 'returns appropriate data struct' do
+        expect(provider.get(context)).to eq(hue_hash)
+      end
+    end
   end
 
   describe '#update' do
-  end
+    let(:should_hash) do
+      {
+        name: 'test',
+        on: true,
+        bri: 254,
+        hue: 25_072,
+        sat: 254,
+        effect: 'colorloop',
+        alert: 'none',
+      }
+    end
 
-  describe '.hue_get' do
-  end
-
-  describe '.hue_put' do
+    it 'calls the hue_put method' do
+      expect(hue_device).to receive(:connection)
+      expect(hue_device).to receive(:hue_put).with('lights/test/state', anything, should_hash)
+      provider.update(context, should_hash[:name], should_hash)
+    end
   end
 end

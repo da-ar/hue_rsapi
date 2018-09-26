@@ -1,81 +1,117 @@
 
 # hue_rsapi
 
-Welcome to your new module. A short overview of the generated parts can be found in the PDK documentation at https://puppet.com/pdk/latest/pdk_generating_modules.html .
-
-The README template below provides a starting point with details about what information to include in your README.
-
-
-
-
-
+The module was created as a simple example of the new way to create a custom Type and Provider using the [Resource API](https://github.com/puppetlabs/puppet-resource_api).
 
 
 #### Table of Contents
 
-1. [Description](#description)
+1. [Module Description - What the module does and why it is useful](#module-description)
 2. [Setup - The basics of getting started with hue_rsapi](#setup)
-    * [What hue_rsapi affects](#what-hue_rsapi-affects)
     * [Setup requirements](#setup-requirements)
-    * [Beginning with hue_rsapi](#beginning-with-hue_rsapi)
+    * [Getting started with hue_rsapi](#getting-started-with-hue_rsapi)
 3. [Usage - Configuration options and additional functionality](#usage)
 4. [Reference - An under-the-hood peek at what the module is doing and how](#reference)
 5. [Limitations - OS compatibility, etc.](#limitations)
 6. [Development - Guide for contributing to the module](#development)
 
-## Description
 
-Start with a one- or two-sentence summary of what the module does and/or what problem it solves. This is your 30-second elevator pitch for your module. Consider including OS/Puppet version it works with.
+## Module Description
 
-You can give more descriptive information in a second paragraph. This paragraph should answer the questions: "What does this module *do*?" and "Why would I use it?" If your module has a range of functionality (installation, configuration, management, etc.), this is the time to mention it.
+The hue_rsapi module will connect to a Philips Hue hub and retrieve basic details of the lights that are connected to it.
+
+The module enables the retrieval and modification of the data.
 
 ## Setup
 
-### What hue_rsapi affects **OPTIONAL**
+To install from source, download the tar file from GitHub and run `puppet module install <file_name>.tar.gz --force`.
 
-If it's obvious what your module touches, you can skip this section. For example, folks can probably figure out that your mysql_instance module affects their MySQL instances.
+### Setup Requirements
 
-If there's more that they should know about, though, this is the place to mention:
+The module has a dependency on the `resource_api` - it will be installed when the module is installed. Alternatively, it can be manually installed by running `puppet module install puppetlabs-resource_api`, or by following the setup instructions in the [Resource API README](https://github.com/puppetlabs/puppetlabs-resource_api#resource_api).
 
-* Files, packages, services, or operations that the module will alter, impact, or execute.
-* Dependencies that your module automatically installs.
-* Warnings or other important notices.
+### Getting started with hue_rsapi
 
-### Setup Requirements **OPTIONAL**
+To get started, create or edit `/etc/puppetlabs/puppet/device.conf`, add a section for the device (this will become the device's `certname`), specify a type of `philips_hue`, and specify a `url` to a credentials file. For example:
 
-If your module requires anything extra before setting up (pluginsync enabled, another module, etc.), mention it here.
+```INI
+[homehub]
+type philips_hue
+url file:////etc/puppetlabs/puppet/devices/homehub.conf
+```
 
-If your most recent release breaks compatibility or requires particular steps for upgrading, you might want to include an additional "Upgrading" section here.
+Next, create a credentials file. See the [HOCON documentation](https://github.com/lightbend/config/blob/master/HOCON.md) for information on quoted/unquoted strings and connecting the device.
 
-### Beginning with hue_rsapi
+  ```
+default: {
+    node: {
+      ip: 10.0.10.1
+      key: onmdTvd198bMrC6QYyVE9iasfYSeyAbAj3XyQzfL
+    }
+}
+  ```
 
-The very basic steps needed for a user to get the module up and running. This can include setup steps, if necessary, or it can be an example of the most basic use of the module.
+To obtain an API key for the device follow the steps here: [http://www.developers.meethue.com/documentation/getting-started](http://www.developers.meethue.com/documentation/getting-started)
+
+Test your setup and get the certificate signed:
+
+`puppet device --verbose --target homehub`
+
+This will sign the certificate and set up the device for Puppet.
+
+See the [`puppet device` documentation](https://puppet.com/docs/puppet/5.5/puppet_device.html)
 
 ## Usage
 
-This section is where you describe how to customize, configure, and do the fancy stuff with your module here. It's especially helpful if you include usage examples and code samples for doing things with your module.
+Now you can manage your hue_light resources, See: [REFERENCE.md](https://github.com/da-ar/hue_rsapi/blob/master/REFERENCE.md).
 
-## Reference
+### Puppet Device
 
-Users need a complete list of your module's classes, types, defined types providers, facts, and functions, along with the parameters for each. You can provide this list either via Puppet Strings code comments or as a complete list in the README Reference section.
+To get information from the device, use the `puppet device --resource` command. For example, to retrieve addresses on the device, run the following:
 
-* If you are using Puppet Strings code comments, this Reference section should include Strings information so that your users know how to access your documentation.
+`puppet device --resource --target homehub hue_light`
 
-* If you are not using Puppet Strings, include a list of all of your classes, defined types, and so on, along with their parameters. Each element in this listing should include:
+To make changes to the light, write a manifest. Start by making a file named `manifest.pp` with the following content:
 
-  * The data type, if applicable.
-  * A description of what the element does.
-  * Valid values, if the data type doesn't make it obvious.
-  * Default value, if any.
+```
+hue_light { '1':
+  on => true,
+  bri => 255,
+  hue => 39139,
+  sat => 255,
+  effect => 'colorloop',
+  alert => 'none',
+}
+```
 
-## Limitations
+Execute the following command:
 
-This is where you list OS compatibility, version compatibility, etc. If there are Known Issues, you might want to include them under their own heading here.
+`puppet device  --target homehub --apply manifest.pp`
+
+This will apply the manifest. Puppet will check if light is already configured with these settings (idempotency check) and if it finds that it needs to make changes will make the appropriate API calls.
+
+Note that if you get errors, run the above commands with `--verbose` - this will give you error message output.
 
 ## Development
 
-Since your module is awesome, other users will want to play with it. Let them know what the ground rules for contributing are.
+This modules has been created for educational reasons, so any updates to the documentation are welcome.
 
-## Release Notes/Contributors/Etc. **Optional**
+### Testing
 
-If you aren't using changelog, put your release notes here (though you should consider using changelog). You can also add any additional sections you feel are necessary or important to include here. Please use the `## ` header.
+#### Unit Testing
+
+Unit tests test the parsing and command generation logic, executed locally.
+
+First execute `bundle exec rake spec_prep` to ensure that the local types are made available to the spec tests. Then execute with `bundle exec rake spec`.
+
+Local testing can be carried out by running:
+
+To retrieve:
+```
+bundle exec puppet device --verbose --debug --trace --modulepath spec/fixtures/modules --target=homehub --deviceconfig spec/fixtures/device.conf --resource hue_light
+```
+
+To set:
+```
+bundle exec puppet device --verbose --debug --trace --modulepath spec/fixtures/modules --target=homehub --deviceconfig spec/fixtures/device.conf --apply examples/hue_disco.pp
+```
