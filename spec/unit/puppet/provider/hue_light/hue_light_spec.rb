@@ -9,10 +9,10 @@ RSpec.describe Puppet::Provider::HueLight::HueLight do
   subject(:provider) { described_class.new }
 
   let(:context) { instance_double('Puppet::ResourceApi::BaseContext', 'context') }
-  let(:hue_device) { instance_double('Puppet::Util::NetworkDevice::Philips_hue::device', 'hue_device') }
+  let(:hue_transport) { instance_double('Puppet::Transport::hueLight', 'hue_transport') }
 
   before(:each) do
-    allow(context).to receive(:device).and_return(hue_device)
+    allow(context).to receive(:transport).and_return(hue_transport)
   end
 
   describe '#set' do
@@ -67,8 +67,8 @@ RSpec.describe Puppet::Provider::HueLight::HueLight do
 
   describe '#get' do
     before(:each) do
-      allow(hue_device).to receive(:connection)
-      allow(hue_device).to receive(:hue_get).and_return(api_data)
+      allow(hue_transport).to receive(:connection)
+      allow(hue_transport).to receive(:hue_get).and_return(api_data)
     end
 
     context 'when no data is returned from HUE API' do
@@ -149,8 +149,8 @@ RSpec.describe Puppet::Provider::HueLight::HueLight do
     end
 
     it 'calls the hue_put method' do
-      expect(hue_device).to receive(:connection)
-      expect(hue_device).to receive(:hue_put).with('lights/test/state', anything, should_hash)
+      expect(hue_transport).to receive(:connection)
+      expect(hue_transport).to receive(:hue_put).with('lights/test/state', anything, should_hash)
       provider.update(context, should_hash[:name], should_hash)
     end
   end

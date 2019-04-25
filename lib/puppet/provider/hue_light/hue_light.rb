@@ -14,7 +14,7 @@ class Puppet::Provider::HueLight::HueLight
 
   def get(context)
     instances = []
-    lights = context.device.hue_get('lights', context.device.connection)
+    lights = context.transport.hue_get('lights', context.transport.connection)
 
     return instances if lights.nil?
 
@@ -32,6 +32,6 @@ class Puppet::Provider::HueLight::HueLight
   end
 
   def update(context, name, should)
-    context.device.hue_put("lights/#{name}/state", context.device.connection, should)
+    context.transport.hue_put("lights/#{name}/state", context.transport.connection, should)
   end
 end
