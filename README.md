@@ -40,15 +40,12 @@ type philips_hue
 url file:////etc/puppetlabs/puppet/devices/homehub.conf
 ```
 
-Next, create a credentials file. See the [HOCON documentation](https://github.com/lightbend/config/blob/master/HOCON.md) for information on quoted/unquoted strings and connecting the device.
+Next, create a credentials file containing a host and key as shown below, with the port value being optional and defaulting to 80 if not set. For more detailed information on the credentials file please see the files [schema](./lib/puppet/transport/schema/philips_hue.rb). See the [HOCON documentation](https://github.com/lightbend/config/blob/master/HOCON.md) for information on quoted/unquoted strings and connecting the device.
 
   ```
-default: {
-    node: {
-      ip: 10.0.10.1
-      key: onmdTvd198bMrC6QYyVE9iasfYSeyAbAj3XyQzfL
-    }
-}
+  host: 10.0.10.1
+  key:  onmdTvd198bMrC6QYyVE9iasfYSeyAbAj3XyQzfL
+  port: 80
   ```
 
 To obtain an API key for the device follow the steps here: [http://www.developers.meethue.com/documentation/getting-started](http://www.developers.meethue.com/documentation/getting-started)
@@ -94,7 +91,11 @@ Note that if you get errors, run the above commands with `--verbose` - this will
 
 ## Development
 
-This modules has been created for educational reasons, so any updates to the documentation are welcome.
+If you do not have an active Philips Hue system handy when developing you may find the [Hue-Emulator](https://github.com/SteveyO/Hue-Emulator) tool to be of use as it will allow you to test your changes without having an actual system in place. The tool is written in java and several differnt versions are provided as .jar files. In order to launch the emulator, you simply enter the following command into your terminal:
+```
+java -jar ./spec/fixtures/HueEmulator-v0.8.jar
+```
+Once it is running and before pressing start be sure to set the port. This can be set to whichever port that you wish, but it is advised to utilise port number `80` as it is the default port used by the module and the one that is advised by the emulator itself.
 
 ### Testing
 
