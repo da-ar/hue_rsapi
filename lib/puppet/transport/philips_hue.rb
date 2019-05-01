@@ -3,10 +3,11 @@ require 'uri'
 require 'json'
 
 module Puppet::Transport
+  # Enables connection to a Philips Hues device
   class PhilipsHue
     attr_reader :connection
 
-    # @summary 
+    # @summary
     #   Initializes and return's a faraday connection to the given host
     def initialize(_context, connection_info)
       port = connection_info[:port].nil? ? 80 : connection_info[:port]
@@ -14,8 +15,7 @@ module Puppet::Transport
       @connection = Faraday.new(url: "http://#{connection_info[:host]}:#{port}/api/#{connection_info[:key]}", ssl: { verify: false })
     end
 
-
-    # @summary 
+    # @summary
     #   Return's set facts regarding the class
     def facts(_context)
       { 'operatingsystem' => 'philips_hue' }
@@ -37,7 +37,6 @@ module Puppet::Transport
       message = message.to_json
       connection.put(url, message)
     end
-
 
     def verify(_context)
       # Test that transport can talk to the remote target
